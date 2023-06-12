@@ -22,7 +22,7 @@ function getxml(event){
     reader.onload = function () {
         xml = new DOMParser().parseFromString(reader.result.toString(), "image/svg+xml");
         lines = xmlGetLines(xml, hexToRgb("#000000"));
-        const defaultview = [0,0,canvas.width,canvas.height];
+        const defaultview = [-1,-1,1,1];
         viewbox = xmlGetViewbox(xml, defaultview);
         setup();
     }
@@ -30,6 +30,10 @@ function getxml(event){
 function setup(){
 
     gl = WebGLUtils.setupWebGL(canvas, undefined);
+
+    gl.clearColor(255, 255, 255, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     if (!gl) {
         console.log('Failed to get the rendering context for WebGL');
         return;
@@ -42,7 +46,7 @@ function setup(){
     gl.bufferData(gl.ARRAY_BUFFER, flatten(lines[0]), gl.STATIC_DRAW);
 
     var vPosition = gl.getAttribLocation(program, "vPosition");
-    gl.vertexAttribPointer(vPosition, 4, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
     var cBuffer = gl.createBuffer();
@@ -53,17 +57,34 @@ function setup(){
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
-    gl.drawArrays(gl.LINES, 0, lines[0].length);
-
     //This is how we handle extents
-   // var thisProj = ortho(viewbox[0], viewbox[2], viewbox[1], viewbox[4], -1, 1);
-      gl.viewport(viewbox[0], viewbox[2], viewbox[1], viewbox[4]);
-  //  var projMatrix = gl.getUniformLocation(program, 'projMatrix');
-   // gl.uniformMatrix4fv(projMatrix, false, flatten(thisProj));
+    if(Math.max(viewbox[2],viewbox[3]) ===viewbox[2]){
+        gl.viewport(0, 0, canvas.width, ((viewbox[3]*canvas.height)/viewbox[2]));
+        console.log(((viewbox[3]*canvas.height)/viewbox[2]));
 
-    // Set clear color
-    gl.clearColor(0.0, 0.0, 0.0, 1.0);
+    }
+    else {
+        gl.viewport(0, 0, ((viewbox[2] * canvas.width) / viewbox[3]), canvas.height);
+        console.log(((viewbox[2] * canvas.width) / viewbox[3]));
 
+    }
+    var translatemat = translate( 0, 0, 0);
+    var modelMatrix = gl.getUniformLocation(program, "modelMatrix");
+    gl.uniformMatrix4fv(modelMatrix,false, flatten(translatemat));
+
+
+
+    render();
+
+}
+
+function render() {
+
+    var thisProj = ortho(viewbox[0], viewbox[2]+viewbox[0], viewbox[1]+viewbox[3], viewbox[1], -1, 1);
+    var projMatrix = gl.getUniformLocation(program, 'projMatrix');
+    gl.uniformMatrix4fv(projMatrix, false, flatten(thisProj));
+
+    gl.drawArrays(gl.LINES, 0, lines[0].length);
 }
 /**
  * Handles what happens when the mouse moves
