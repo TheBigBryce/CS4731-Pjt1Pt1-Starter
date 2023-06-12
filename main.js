@@ -22,7 +22,8 @@ function getxml(event){
     reader.onload = function () {
         xml = new DOMParser().parseFromString(reader.result.toString(), "image/svg+xml");
         lines = xmlGetLines(xml, hexToRgb("#000000"));
-        viewbox = (xmlGetViewbox(xml, (0, 0, canvas.width, canvas.height)));
+        const defaultview = [0,0,canvas.width,canvas.height];
+        viewbox = xmlGetViewbox(xml, defaultview);
         setup();
     }
 }
@@ -55,60 +56,15 @@ function setup(){
     gl.drawArrays(gl.LINES, 0, lines[0].length);
 
     //This is how we handle extents
-    var thisProj = ortho(-1, 400, -1, 1, 0.1, 100);
-
-    var projMatrix = gl.getUniformLocation(program, 'projMatrix');
-    gl.uniformMatrix4fv(projMatrix, false, flatten(thisProj));
+   // var thisProj = ortho(viewbox[0], viewbox[2], viewbox[1], viewbox[4], -1, 1);
+      gl.viewport(viewbox[0], viewbox[2], viewbox[1], viewbox[4]);
+  //  var projMatrix = gl.getUniformLocation(program, 'projMatrix');
+   // gl.uniformMatrix4fv(projMatrix, false, flatten(thisProj));
 
     // Set clear color
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-    //Necessary for animation
-    render();
-
 }
-
-function render() {
-   // var rotMatrix = rotate(0, vec3(1.0, 1.0, 1.0));
-   // var translateMatrix = translate(0, 0, 0);
-   // var ctMatrix = mult(translateMatrix, rotMatrix);
-
-    var eye = vec3(0.0, 0.0, 2.0);
-    var at = vec3(0.0, 0.0, 0.0);
-    var up = vec3(0.0, 1.0, 0.0);
-
-    var cameraMatrix = lookAt(eye, at, up);
-
-  //  var ctMatrixLoc = gl.getUniformLocation(program, "modelMatrix");
-  //  gl.uniformMatrix4fv(ctMatrixLoc, false, flatten(ctMatrix));
-
-    var cameraMatrixLoc = gl.getUniformLocation(program, "cameraMatrix");
-    gl.uniformMatrix4fv(cameraMatrixLoc, false, flatten(cameraMatrix));
-
-
-    gl.clear( gl.COLOR_BUFFER_BIT);
-
-    // create the buffer
-    var indexBuffer = gl.createBuffer();
-
-    // make this buffer the current 'ELEMENT_ARRAY_BUFFER'
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-    // Fill the current element array buffer with data
-    var indices = [0,1,3,2];
-
-    gl.bufferData(
-        gl.ELEMENT_ARRAY_BUFFER,
-        new Uint16Array(indices),
-        gl.STATIC_DRAW
-    );
-
-
-
-    gl.drawElements(gl.LINES, indices.length, gl.UNSIGNED_SHORT,0);
-
-}
-
 /**
  * Handles what happens when the mouse moves
  * @param event the mouse moving event
