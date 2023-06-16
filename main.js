@@ -4,6 +4,15 @@ var canvas;
 var xml;
 let gl;
 var program;
+let shiftDown=false;
+var xCenter=0;
+var yCenter=0;
+var xAvg=0;
+var yAvg=0;
+let translateX=0;
+var translateY=0;
+var scaleBy=0;
+var rotateBy = 0;
 var mouseClicked = false;
 var translateMatrix = translate(0,0,0);
 function main() {
@@ -27,7 +36,41 @@ function getxml(event) {
         canvas.addEventListener("mousedown", mouseClick, false);
         canvas.addEventListener("mouseup", mouseUp, false);
         canvas.addEventListener("wheel", mouseScroll, false);
+        canvas.addEventListener("keydown", keyDown, false);
+        canvas.addEventListener("keyup", keyUp, false);
         setup();
+    }
+    function  keyDown(event){
+        if(event.key==="Shift"){
+            shiftDown=true;
+        }
+        else if (event.key === "r"){
+            resetTransformations();
+        }
+    }
+    function keyUp(event){
+        if(event.key==="Shift"){
+            shiftDown=false;
+        }
+    }
+
+    function resetTransformations(){
+        translateX=0;
+        translateY=0;
+        scaleBy=1;
+
+        var modelMatrix = gl.getUniformLocation(program, "modelMatrix");
+        let returnToSender = translate(-xtotal/lines[0].length,-ytotal/lines[0].length,0);
+        let translateToOrigin = translate(xtotal/lines[0].length,ytotal/lines[0].length,0);
+        let resetMatrix=mult(translateToOrigin,rotateZ(1));
+        resetMatrix=mult(scalem(1,1,0),resetMatrix);
+        resetMatrix=mult(returnToSender,resetMatrix);
+        resetMatrix=mult(translate(0,0,0),resetMatrix);
+        gl.uniformMatrix4fv(modelMatrix, false, flatten(resetMatrix));
+
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.LINES, 0, lines[0].length);
     }
 
     function setup() {
@@ -75,17 +118,26 @@ function getxml(event) {
         render();
 
     }
-var id;
     function render() {
-
-        var modelMatrix = gl.getUniformLocation(program, "modelMatrix");
-        gl.uniformMatrix4fv(modelMatrix, false, flatten(translateMatrix));
         var thisProj = ortho(viewbox[0], viewbox[2] + viewbox[0], viewbox[1] + viewbox[3], viewbox[1], -1, 1);
         var projMatrix = gl.getUniformLocation(program, 'projMatrix');
         gl.uniformMatrix4fv(projMatrix, false, flatten(thisProj));
 
+
+        let modelMatrix = gl.getUniformLocation(program, "modelMatrix");
+        gl.uniformMatrix4fv(modelMatrix, false, flatten(rotateZ(0)));
+        xCenter=viewbox[2]/2;
+        yCenter=viewbox[3]/2;
+        xAvg=0;
+        yAvg=0;
+        for(var i=0; i<lines[0].length;i++){
+           let currentLine = lines[0][i];
+           xAvg+=currentLine[0];
+           yAvg+=currentLine[1];
+        }
+        yAvg/=lines[0].length;
+        xAvg/=lines[0].length;
         gl.drawArrays(gl.LINES, 0, lines[0].length);
-        id = requestAnimationFrame(render);
     }
 
     /**
@@ -93,14 +145,22 @@ var id;
      * @param event the mouse clicking event
      */
     function mouseMove(event) {
-        if(!first) {
-            if (mouseClicked) {
-                console.log(event);
-                translateMatrix = translate(0, 0, 0);
-                render();
-            }
-        }
-        else{
+
+        if (mouseClicked) {
+            var modelMatrix = gl.getUniformLocation(program, "modelMatrix");
+            translateX += event.movementX;
+            translateY += event.movementY;
+            translateMatrix = translate((translateX*xCenter)/100,(translateY*yCenter)/100,0);
+            let returnToSender = translate(-xAvg,-yAvg,0);
+            let translateToOrigin = translate(xAvg,yAvg,0);
+            let fullMatrix = mult(translateToOrigin, rotateZ(rotateBy));
+            fullMatrix = mult(scalem(1, 1, 0), fullMatrix);
+            fullMatrix = mult(returnToSender, fullMatrix);
+            fullMatrix = mult(translateMatrix, fullMatrix);
+            gl.uniformMatrix4fv(modelMatrix, false, flatten(fullMatrix));
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.LINES, 0, lines[0].length);
         }
     }
 
@@ -109,7 +169,6 @@ var id;
      * @param event the mouse clicking event
      */
     function mouseUp(event) {
-        if(mouseClicked)
         mouseClicked = false;
 
     }
@@ -119,6 +178,34 @@ var id;
      * @param event the mouse scrolling event
      */
     function mouseScroll(event) {
+        var modelMatrix = gl.getUniformLocation(program, "modelMatrix");
+        let returnToSender = translate(-xAvg,-yAvg,0);
+        let translateToOrigin = translate(xAvg,yAvg,0);
+        translateMatrix = translate((translateX*xCenter)/100,(translateY*yCenter)/100,0);
+        if(!shiftDown){
+            if(event.deltaY>0){
+                rotateBy+=2;
+            }
+            else if(event.deltaY<0){
+                rotateBy-=2;
+            }
+        }
+        else{
+            if(event.deltaY>0 && scaleBy > 0){
+            scaleBy-=.05;
+            }
+            else if(event.deltaY<0 && scaleBy < 12){
+                scaleBy+=.05;
+            }
+        }
+        let fullMatrix = mult(translateToOrigin, rotateZ(rotateBy));
+        fullMatrix = mult(scalem(1, 1, 0), fullMatrix);
+        fullMatrix = mult(returnToSender, fullMatrix);
+        fullMatrix = mult(translateMatrix, fullMatrix);
+        gl.uniformMatrix4fv(modelMatrix, false, flatten(fullMatrix));
+        gl.clearColor(1.0, 1.0, 1.0, 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.LINES, 0, lines[0].length);
         console.log(event);
     }
 
