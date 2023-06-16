@@ -138,8 +138,8 @@ function getxml(event) {
     }
 
     /**
-     * Handles what happens when the mouse clicks
-     * @param event the mouse clicking event
+     * Handles what happens when the mouse moves
+     * @param event the mouse moving event
      */
     function mouseMove(event) {
 
@@ -162,8 +162,8 @@ function getxml(event) {
     }
 
     /**
-     * Handles what happens when the mouse clicks
-     * @param event the mouse clicking event
+     * Handles what happens when the mouse releasing
+     * @param event the mouse releasing event
      */
     function mouseUp(event) {
         mouseClicked = false;
