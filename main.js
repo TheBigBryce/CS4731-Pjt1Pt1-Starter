@@ -62,10 +62,8 @@ function getxml(event) {
         var modelMatrix = gl.getUniformLocation(program, "modelMatrix");
         let returnToSender = translate(-xAvg/lines[0].length,-yAvg/lines[0].length,0);
         let translateToOrigin = translate(xAvg/lines[0].length,yAvg/lines[0].length,0);
-        let resetMatrix=mult(translateToOrigin,rotateZ(0));
-        resetMatrix=mult(scalem(scaleBy,scaleBy,1),resetMatrix);
-        resetMatrix=mult(returnToSender,resetMatrix);
-        resetMatrix=mult(translate(0,0,0),resetMatrix);
+        let resetMatrix=mult(translate(translateX*xCenter/260.0,translateY*yCenter/260.0,0),mult(mult(mult(translateToOrigin, rotateZ(rotateBy)), scalem(scaleBy, scaleBy, 0)),returnToSender));
+
         gl.uniformMatrix4fv(modelMatrix, false, flatten(resetMatrix));
 
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
@@ -150,10 +148,7 @@ function getxml(event) {
             translateMatrix = translate((translateX*xCenter)/260,(translateY*yCenter)/260,0);
             let returnToSender = translate(-xAvg/lines[0].length,-yAvg/lines[0].length,0);
             let translateToOrigin = translate(xAvg/lines[0].length,yAvg/lines[0].length,0);
-            let fullMatrix = mult(translateToOrigin, rotateZ(rotateBy));
-            fullMatrix = mult(scalem(scaleBy, scaleBy, 1), fullMatrix);
-            fullMatrix = mult(returnToSender, fullMatrix);
-            fullMatrix = mult(translateMatrix, fullMatrix);
+            let fullMatrix=mult(translate(translateX*xCenter/260.0,translateY*yCenter/260.0,0),mult(mult(mult(translateToOrigin, rotateZ(rotateBy)), scalem(scaleBy, scaleBy, 0)),returnToSender));
             gl.uniformMatrix4fv(modelMatrix, false, flatten(fullMatrix));
             gl.clearColor(1.0, 1.0, 1.0, 1.0);
             gl.clear(gl.COLOR_BUFFER_BIT);
@@ -195,10 +190,7 @@ function getxml(event) {
                 scaleBy-=.05;
             }
         }
-        let fullMatrix = mult(translateToOrigin, rotateZ(rotateBy));
-        fullMatrix = mult(scalem(scaleBy, scaleBy, 1), fullMatrix);
-        fullMatrix = mult(returnToSender, fullMatrix);
-        fullMatrix = mult(translateMatrix, fullMatrix);
+        let fullMatrix=mult(translate(translateX*xCenter/260.0,translateY*yCenter/260.0,0),mult(mult(mult(translateToOrigin, rotateZ(rotateBy)), scalem(scaleBy, scaleBy, 0)),returnToSender));
         gl.uniformMatrix4fv(modelMatrix, false, flatten(fullMatrix));
         gl.clearColor(1.0, 1.0, 1.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
